@@ -17,7 +17,7 @@ const db = new sqlite3.Database('./database/plants.db');
 
 // Criar tabelas
 db.serialize(() => {
-  // Tabela de diagnósticos
+  // Tabela de diagnósticos - GLOBAIS (todos os usuários compartilham)
   db.run(`CREATE TABLE IF NOT EXISTS diagnoses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT,
@@ -28,7 +28,8 @@ db.serialize(() => {
     longitude REAL NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     synced BOOLEAN DEFAULT 1,
-    image_hash TEXT
+    image_hash TEXT,
+    user_location TEXT DEFAULT 'Não informado'
   )`);
 
   // Tabela de plantas offline (para sincronização)
@@ -39,6 +40,32 @@ db.serialize(() => {
     method TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Inserir alguns dados de exemplo se a tabela estiver vazia
+  db.get("SELECT COUNT(*) as count FROM diagnoses", [], (err, row) => {
+    if (!err && row.count === 0) {
+      console.log('📊 Inserindo dados de exemplo...');
+      const sampleData = [
+        ['demo_user_1', 'Tomato', 'Early_blight', 0.89, -15.7942, -47.8822, 'Brasília - DF'],
+        ['demo_user_2', 'Apple', 'Apple_scab', 0.92, -15.7850, -47.8950, 'Brasília - DF'],
+        ['demo_user_3', 'Potato', 'Late_blight', 0.87, -15.8100, -47.8600, 'Brasília - DF'],
+        ['demo_user_4', 'Grape', 'healthy', 0.95, -15.7700, -47.9100, 'Brasília - DF'],
+        ['demo_user_5', 'Corn', 'Common_rust_', 0.84, -15.7600, -47.8700, 'Brasília - DF']
+      ];
+      
+      const stmt = db.prepare(`
+        INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, user_location)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      sampleData.forEach(data => {
+        stmt.run(data);
+      });
+      
+      stmt.finalize();
+      console.log('✅ Dados de exemplo inseridos');
+    }
+  });
 });
 
 // Carregar informações das plantas do JSON
@@ -82,7 +109,7 @@ function simulatePlantDiseaseDetection(imageData) {
 // Rota para análise de plantas
 app.post('/api/analyze-plant', async (req, res) => {
   try {
-    const { image, latitude, longitude, userId = 'anonymous' } = req.body;
+    const { image, latitude, longitude, userId = 'anonymous', userLocation = 'Não informado' } = req.body;
     
     if (!image || !latitude || !longitude) {
       return res.status(400).json({ 
@@ -103,10 +130,10 @@ app.post('/api/analyze-plant', async (req, res) => {
     const crypto = require('crypto');
     const imageHash = crypto.createHash('md5').update(image).digest('hex');
 
-    // Salvar no banco de dados
+    // Salvar no banco de dados GLOBAL
     const stmt = db.prepare(`
-      INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash, user_location)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run([
@@ -116,7 +143,8 @@ app.post('/api/analyze-plant', async (req, res) => {
       analysis.confidence,
       latitude,
       longitude,
-      imageHash
+      imageHash,
+      userLocation
     ], function(err) {
       if (err) {
         console.error('Erro ao salvar diagnóstico:', err);
@@ -140,6 +168,7 @@ app.post('/api/analyze-plant', async (req, res) => {
         health_color: healthStatus?.color || 'gray',
         latitude,
         longitude,
+        user_location: userLocation,
         timestamp: new Date().toISOString(),
         plant_wiki_url: `https://pt.wikipedia.org/wiki/${encodeURIComponent(analysis.plant_type)}`,
         disease_info_url: analysis.disease !== 'Saudável' ? 
@@ -157,16 +186,15 @@ app.post('/api/analyze-plant', async (req, res) => {
   }
 });
 
-// Rota para obter todos os diagnósticos
+// Rota para obter todos os diagnósticos (GLOBAIS - todos os usuários)
 app.get('/api/diagnoses', (req, res) => {
-  const { userId = 'anonymous', limit = 100 } = req.query;
+  const { limit = 100 } = req.query;
   
   db.all(`
     SELECT * FROM diagnoses 
-    WHERE user_id = ? 
     ORDER BY timestamp DESC 
     LIMIT ?
-  `, [userId, limit], (err, rows) => {
+  `, [limit], (err, rows) => {
     if (err) {
       console.error('Erro ao buscar diagnósticos:', err);
       return res.status(500).json({ error: 'Erro ao buscar diagnósticos' });
@@ -256,10 +284,8 @@ app.post('/api/sync', async (req, res) => {
   }
 });
 
-// Rota para obter estatísticas
+// Rota para obter estatísticas (GLOBAIS - todos os usuários)
 app.get('/api/stats', (req, res) => {
-  const { userId = 'anonymous' } = req.query;
-  
   db.all(`
     SELECT 
       plant_type,
@@ -267,10 +293,9 @@ app.get('/api/stats', (req, res) => {
       COUNT(*) as count,
       AVG(confidence) as avg_confidence
     FROM diagnoses 
-    WHERE user_id = ?
     GROUP BY plant_type, disease
     ORDER BY count DESC
-  `, [userId], (err, rows) => {
+  `, [], (err, rows) => {
     if (err) {
       console.error('Erro ao buscar estatísticas:', err);
       return res.status(500).json({ error: 'Erro ao buscar estatísticas' });
