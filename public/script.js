@@ -167,6 +167,7 @@ async function takePhoto() {
       latitude: coords.latitude,
       longitude: coords.longitude,
       userId: USER_ID,
+      userLocation: 'Usuário da Web', // Pode ser melhorado com geolocalização reversa
       timestamp: new Date().toISOString()
     };
 
@@ -419,7 +420,8 @@ async function refreshMap() {
     let diagnoses = [];
     
     if (isOnline) {
-      const response = await fetch(`${API_BASE_URL}/api/diagnoses?userId=${USER_ID}`);
+      // Buscar TODOS os diagnósticos (globais)
+      const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=1000`);
       if (response.ok) {
         diagnoses = await response.json();
       }
@@ -468,6 +470,7 @@ async function refreshMap() {
           <h4 class="font-bold text-gray-800">${diagnosis.plant_type}</h4>
           <p class="text-sm text-gray-600"><strong>Condição:</strong> ${diagnosis.disease}</p>
           ${diagnosis.confidence > 0 ? `<p class="text-sm text-gray-600"><strong>Confiança:</strong> ${diagnosis.confidence}%</p>` : ''}
+          <p class="text-xs text-gray-500"><strong>Usuário:</strong> ${diagnosis.user_location || 'Não informado'}</p>
           <p class="text-xs text-gray-500">${new Date(diagnosis.timestamp).toLocaleString('pt-BR')}</p>
           ${diagnosis.offline ? '<p class="text-xs text-yellow-600 font-medium">📱 Aguardando sincronização</p>' : ''}
         </div>
@@ -481,10 +484,15 @@ async function refreshMap() {
     if (mapInfo) {
       const total = diagnoses.length;
       const offline = diagnoses.filter(d => d.offline).length;
+      const healthy = diagnoses.filter(d => d.disease === 'Saudável' || d.disease === 'healthy').length;
+      const diseased = total - healthy - offline;
+      
       mapInfo.innerHTML = `
-        <i class="fas fa-map-marker-alt mr-1"></i>
-        ${total} registro${total !== 1 ? 's' : ''}
-        ${offline > 0 ? `(${offline} offline)` : ''}
+        <i class="fas fa-users mr-1"></i>
+        ${total} registro${total !== 1 ? 's' : ''} da comunidade
+        ${healthy > 0 ? `(${healthy} 🌱 saudável${healthy !== 1 ? 's' : ''})` : ''}
+        ${diseased > 0 ? `(${diseased} ⚠️ doente${diseased !== 1 ? 's' : ''})` : ''}
+        ${offline > 0 ? `(${offline} 📱 offline)` : ''}
       `;
     }
     
@@ -501,7 +509,8 @@ async function loadHistory() {
     let diagnoses = [];
     
     if (isOnline) {
-      const response = await fetch(`${API_BASE_URL}/api/diagnoses?userId=${USER_ID}&limit=50`);
+      // Buscar TODOS os diagnósticos (globais)
+      const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=100`);
       if (response.ok) {
         diagnoses = await response.json();
       }
@@ -528,8 +537,9 @@ async function loadHistory() {
     if (diagnoses.length === 0) {
       historyList.innerHTML = `
         <div class="text-center py-8">
-          <i class="fas fa-leaf text-4xl text-gray-300 mb-4"></i>
-          <p class="text-gray-500">Nenhum diagnóstico realizado ainda</p>
+          <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
+          <p class="text-gray-500">Nenhum diagnóstico da comunidade ainda</p>
+          <p class="text-gray-400 text-sm mt-2">Seja o primeiro a contribuir!</p>
           <button class="mt-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors" onclick="showScreen('diagnosis-screen')">
             <i class="fas fa-camera mr-2"></i>Fazer Primeiro Diagnóstico
           </button>
@@ -549,6 +559,7 @@ async function loadHistory() {
             <div>
               <h3 class="font-bold text-gray-800">${diagnosis.plant_type}</h3>
               <p class="text-sm text-gray-600">${diagnosis.disease}</p>
+              <p class="text-xs text-gray-500">👤 ${diagnosis.user_location || 'Usuário da comunidade'}</p>
             </div>
           </div>
           ${diagnosis.confidence > 0 ? `
@@ -600,7 +611,8 @@ async function loadStats() {
     let stats = null;
     
     if (isOnline) {
-      const response = await fetch(`${API_BASE_URL}/api/stats?userId=${USER_ID}`);
+      // Buscar estatísticas GLOBAIS (todos os usuários)
+      const response = await fetch(`${API_BASE_URL}/api/stats`);
       if (response.ok) {
         stats = await response.json();
       }
@@ -613,7 +625,8 @@ async function loadStats() {
       statsContent.innerHTML = `
         <div class="text-center py-8">
           <i class="fas fa-chart-bar text-4xl text-gray-300 mb-4"></i>
-          <p class="text-gray-500">Sem dados para exibir estatísticas</p>
+          <p class="text-gray-500">Sem dados da comunidade para exibir</p>
+          <p class="text-gray-400 text-sm mt-2">As estatísticas aparecerão quando houver diagnósticos</p>
           ${offlineCount > 0 ? `
           <div class="mt-4 bg-yellow-100 border border-yellow-400 rounded-lg p-4">
             <i class="fas fa-wifi-slash text-yellow-600 mr-2"></i>
@@ -630,9 +643,9 @@ async function loadStats() {
     statsContent.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-6 text-center">
-          <i class="fas fa-leaf text-3xl text-green-600 mb-2"></i>
+          <i class="fas fa-users text-3xl text-green-600 mb-2"></i>
           <div class="text-2xl font-bold text-gray-800">${totalWithOffline}</div>
-          <div class="text-sm text-gray-600">Total de Diagnósticos</div>
+          <div class="text-sm text-gray-600">Total da Comunidade</div>
         </div>
         
         <div class="bg-white rounded-lg shadow p-6 text-center">
@@ -666,7 +679,7 @@ async function loadStats() {
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
           <i class="fas fa-chart-pie mr-2"></i>
-          Diagnósticos por Planta
+          Diagnósticos da Comunidade por Planta
         </h3>
         <div class="space-y-3">
           ${stats.by_plant.map(item => {
