@@ -1,0 +1,234 @@
+{
+  "classes": [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___Cedar_apple_rust",
+    "Apple___healthy",
+    "Blueberry___healthy",
+    "Cherry_(including_sour)___Powdery_mildew",
+    "Cherry_(including_sour)___healthy",
+    "Corn_(maize)___Cercospora_leaf_spot_Gray_leaf_spot",
+    "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Northern_Leaf_Blight",
+    "Corn_(maize)___healthy",
+    "Grape___Black_rot",
+    "Grape___Esca_(Black_Measles)",
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+    "Grape___healthy",
+    "Orange___Haunglongbing_(Citrus_greening)",
+    "Peach___Bacterial_spot",
+    "Peach___healthy",
+    "Pepper,_bell___Bacterial_spot",
+    "Pepper,_bell___healthy",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Raspberry___healthy",
+    "Soybean___healthy",
+    "Squash___Powdery_mildew",
+    "Strawberry___Leaf_scorch",
+    "Strawberry___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Leaf_Mold",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___Spider_mites_Two-spotted_spider_mite",
+    "Tomato___Target_Spot",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "Tomato___Tomato_mosaic_virus",
+    "Tomato___healthy"
+  ],
+  "classes_pt": [
+    "Maçã - Sarna da Maçã",
+    "Maçã - Podridão Negra", 
+    "Maçã - Ferrugem do Cedro",
+    "Maçã - Saudável",
+    "Mirtilo - Saudável",
+    "Cereja - Oídio",
+    "Cereja - Saudável",
+    "Milho - Mancha de Cercospora",
+    "Milho - Ferrugem Comum",
+    "Milho - Queima das Folhas do Norte",
+    "Milho - Saudável",
+    "Uva - Podridão Negra",
+    "Uva - Esca (Sarampo Negro)",
+    "Uva - Mancha Foliar",
+    "Uva - Saudável",
+    "Laranja - HLB (Esverdeamento dos Citros)",
+    "Pêssego - Mancha Bacteriana",
+    "Pêssego - Saudável",
+    "Pimentão - Mancha Bacteriana",
+    "Pimentão - Saudável",
+    "Batata - Pinta Preta Precoce",
+    "Batata - Requeima",
+    "Batata - Saudável",
+    "Framboesa - Saudável",
+    "Soja - Saudável",
+    "Abóbora - Oídio",
+    "Morango - Queima das Folhas",
+    "Morango - Saudável",
+    "Tomate - Mancha Bacteriana",
+    "Tomate - Pinta Preta Precoce",
+    "Tomate - Requeima",
+    "Tomate - Mofo das Folhas",
+    "Tomate - Mancha de Septoria",
+    "Tomate - Ácaros Spider",
+    "Tomate - Mancha de Alternária",
+    "Tomate - Vírus do Enrolamento Amarelo",
+    "Tomate - Vírus do Mosaico",
+    "Tomate - Saudável"
+  ],
+  "plant_emojis": {
+    "Apple": "🍎",
+    "Blueberry": "🫐",
+    "Cherry": "🍒",
+    "Corn": "🌽",
+    "Grape": "🍇",
+    "Orange": "🍊",
+    "Peach": "🍑",
+    "Pepper": "🫑",
+    "Potato": "🥔",
+    "Raspberry": "🫐",
+    "Soybean": "🌱",
+    "Squash": "🎃",
+    "Strawberry": "🍓",
+    "Tomato": "🍅"
+  },
+  "health_status": {
+    "healthy": {
+      "pt": "Saudável",
+      "emoji": "✅",
+      "color": "green"
+    },
+    "diseased": {
+      "pt": "Doente",
+      "emoji": "⚠️",
+      "color": "red"
+    }
+  },
+  "disease_categories": {
+    "fungal": {
+      "pt": "Fúngica",
+      "emoji": "🍄",
+      "color": "brown",
+      "diseases": ["Apple_scab", "Black_rot", "Cedar_apple_rust", "Powdery_mildew", "Common_rust", "Northern_Leaf_Blight", "Esca", "Leaf_blight", "Early_blight", "Late_blight", "Leaf_Mold", "Septoria_leaf_spot", "Target_Spot"]
+    },
+    "bacterial": {
+      "pt": "Bacteriana", 
+      "emoji": "🦠",
+      "color": "purple",
+      "diseases": ["Bacterial_spot"]
+    },
+    "viral": {
+      "pt": "Viral",
+      "emoji": "🔴",
+      "color": "red",
+      "diseases": ["Tomato_Yellow_Leaf_Curl_Virus", "Tomato_mosaic_virus"]
+    },
+    "pest": {
+      "pt": "Praga",
+      "emoji": "🐛",
+      "color": "orange",
+      "diseases": ["Spider_mites_Two-spotted_spider_mite"]
+    },
+    "physiological": {
+      "pt": "Fisiológica",
+      "emoji": "⚡",
+      "color": "yellow",
+      "diseases": ["Leaf_scorch", "Haunglongbing"]
+    }
+  },
+  "treatment_recommendations": {
+    "Apple_scab": {
+      "treatment": "Aplicar fungicidas cúpricos ou sistêmicos. Melhorar ventilação e evitar molhamento das folhas.",
+      "prevention": "Podar para melhorar circulação de ar, remover folhas caídas, usar variedades resistentes."
+    },
+    "Black_rot": {
+      "treatment": "Remoção de partes infectadas, aplicação de fungicidas, melhoria da drenagem.",
+      "prevention": "Evitar ferimentos na planta, controlar umidade, rotação de culturas."
+    },
+    "Cedar_apple_rust": {
+      "treatment": "Fungicidas preventivos, remoção de hospedeiros alternativos (cedros).",
+      "prevention": "Plantar longe de cedros, usar variedades resistentes."
+    },
+    "Powdery_mildew": {
+      "treatment": "Bicarbonato de sódio, óleo de neem, fungicidas específicos para oídio.",
+      "prevention": "Melhorar ventilação, evitar excesso de nitrogênio, irrigação localizada."
+    },
+    "Bacterial_spot": {
+      "treatment": "Bactericidas cúpricos, remoção de partes infectadas, melhorar drenagem.",
+      "prevention": "Evitar molhamento das folhas, usar sementes sadias, rotação de culturas."
+    },
+    "Early_blight": {
+      "treatment": "Fungicidas sistêmicos, remoção de folhas infectadas, melhorar ventilação.",
+      "prevention": "Rotação de culturas, espaçamento adequado, irrigação por gotejamento."
+    },
+    "Late_blight": {
+      "treatment": "Fungicidas sistêmicos urgentes, remoção imediata de plantas infectadas.",
+      "prevention": "Monitoramento constante, variedades resistentes, evitar irrigação noturna."
+    },
+    "Leaf_Mold": {
+      "treatment": "Melhorar ventilação, reduzir umidade, fungicidas específicos.",
+      "prevention": "Controle de umidade, poda adequada, variedades resistentes."
+    },
+    "Septoria_leaf_spot": {
+      "treatment": "Fungicidas preventivos, remoção de folhas infectadas, mulching.",
+      "prevention": "Irrigação por gotejamento, rotação de culturas, limpeza de restos vegetais."
+    },
+    "Spider_mites": {
+      "treatment": "Acaricidas específicos, óleo de neem, aumento da umidade.",
+      "prevention": "Irrigação adequada, controle biológico, predadores naturais."
+    },
+    "Target_Spot": {
+      "treatment": "Fungicidas sistêmicos, remoção de partes infectadas, melhorar drenagem.",
+      "prevention": "Rotação de culturas, espaçamento adequado, controle de umidade."
+    },
+    "Tomato_Yellow_Leaf_Curl_Virus": {
+      "treatment": "Controle de vetores (mosca-branca), remoção de plantas infectadas.",
+      "prevention": "Uso de variedades resistentes, controle de insetos vetores, barreiras físicas."
+    },
+    "Tomato_mosaic_virus": {
+      "treatment": "Remoção de plantas infectadas, desinfecção de ferramentas.",
+      "prevention": "Uso de sementes certificadas, controle de vetores, higiene nas práticas culturais."
+    },
+    "Leaf_scorch": {
+      "treatment": "Irrigação adequada, sombreamento temporário, fertilização balanceada.",
+      "prevention": "Irrigação regular, mulching, proteção contra ventos fortes."
+    },
+    "Haunglongbing": {
+      "treatment": "Controle do vetor (psilídeo), nutrição adequada, remoção de plantas infectadas.",
+      "prevention": "Monitoramento de vetores, uso de plantas livres da doença, controle químico preventivo."
+    }
+  },
+  "num_classes": 38,
+  "accuracy": 94.92851554164592,
+  "model_type": "plant_disease_detector",
+  "dataset": "PlantVillage",
+  "input_size": [224, 224],
+  "input_channels": 3,
+  "normalization": {
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225]
+  },
+  "version": "2.1.0",
+  "language": "pt-BR",
+  "created_date": "2024-06-01",
+  "updated_date": "2025-06-02",
+  "description": "Modelo de IA para detecção de doenças em plantas, treinado com o dataset PlantVillage. Suporta 38 classes incluindo 14 tipos de plantas e suas respectivas condições de saúde. Inclui recomendações de tratamento e prevenção.",
+  "features": {
+    "offline_mode": true,
+    "confidence_threshold": 0.7,
+    "geolocation": true,
+    "synchronization": true,
+    "multilingual": false,
+    "treatment_recommendations": true,
+    "disease_categorization": true
+  },
+  "links": {
+    "wikipedia_base": "https://pt.wikipedia.org/wiki/",
+    "embrapa_base": "https://www.embrapa.br/busca-de-noticias/-/noticia/buscar?q=",
+    "plant_database": "https://www.agencia.cnptia.embrapa.br/",
+    "disease_database": "https://www.infoteca.cnptia.embrapa.br/"
+  }
+}

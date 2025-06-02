@@ -1,0 +1,33 @@
+{
+  "name": "agroia-pwa",
+  "version": "2.1.0",
+  "description": "PWA para detecção de doenças em plantas usando IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup": "npm install && mkdir -p database public/img data",
+    "test": "echo \"Testes não implementados\" && exit 1"
+  },
+  "keywords": [
+    "pwa",
+    "plantas",
+    "agricultura",
+    "ia",
+    "nodejs",
+    "sqlite"
+  ],
+  "author": "AGROIA Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
