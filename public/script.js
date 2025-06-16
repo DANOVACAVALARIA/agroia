@@ -106,7 +106,119 @@ function updateConnectionStatus() {
   }
 }
 
-// Câmera e diagnóstico
+// Manipular seleção de arquivo
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Verificar se é uma imagem
+  if (!file.type.startsWith('image/')) {
+    alert('Por favor, selecione apenas arquivos de imagem.');
+    return;
+  }
+  
+  // Verificar tamanho do arquivo (máximo 10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('A imagem é muito grande. Por favor, selecione uma imagem menor que 10MB.');
+    return;
+  }
+  
+  // Mostrar loading
+  document.getElementById('loading-overlay').classList.remove('hidden');
+  
+  // Ler arquivo como data URL
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    processSelectedImage(e.target.result);
+  };
+  reader.onerror = function() {
+    document.getElementById('loading-overlay').classList.add('hidden');
+    alert('Erro ao ler o arquivo. Tente novamente.');
+  };
+  reader.readAsDataURL(file);
+  
+  // Limpar input para permitir selecionar o mesmo arquivo novamente
+  event.target.value = '';
+}
+
+// Processar imagem selecionada
+async function processSelectedImage(imageDataUrl) {
+  try {
+    // Redimensionar imagem se necessário
+    const resizedImage = await resizeImage(imageDataUrl, 1280, 720);
+    
+    // Obter localização
+    const coords = await getCurrentLocation();
+    
+    // Preparar dados para análise
+    const analysisData = {
+      image: resizedImage,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      userId: USER_ID,
+      userLocation: 'Usuário da Web',
+      timestamp: new Date().toISOString()
+    };
+
+    let result;
+    
+    if (isOnline) {
+      // Enviar para servidor
+      result = await analyzeOnline(analysisData);
+    } else {
+      // Armazenar para sincronização posterior
+      result = await analyzeOffline(analysisData);
+    }
+    
+    // Parar câmera se estiver ativa
+    stopCamera();
+    
+    displayPlantInfo(result, resizedImage);
+    
+  } catch (error) {
+    console.error('Erro ao processar imagem:', error);
+    alert('Erro ao processar a imagem. Tente novamente.');
+  } finally {
+    document.getElementById('loading-overlay').classList.add('hidden');
+  }
+}
+
+// Redimensionar imagem mantendo aspect ratio
+function resizeImage(dataUrl, maxWidth, maxHeight) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Calcular novo tamanho mantendo proporção
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Desenhar imagem redimensionada
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Converter para data URL com qualidade otimizada
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      resolve(resizedDataUrl);
+    };
+    img.src = dataUrl;
+  });
+}
 async function startCamera() {
   try {
     if (currentStream) {
@@ -193,19 +305,24 @@ async function takePhoto() {
 }
 
 async function analyzeOnline(data) {
-  const response = await fetch(`${API_BASE_URL}/api/analyze-plant`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Erro do servidor: ${response.status}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/analyze-plant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro do servidor: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erro na análise online:', error);
+    throw error;
   }
-  
-  return await response.json();
 }
 
 async function analyzeOffline(data) {
@@ -351,6 +468,12 @@ function resetCamera() {
   document.getElementById('take-photo-btn').disabled = true;
   document.getElementById('start-camera-btn').disabled = false;
   document.getElementById('start-camera-btn').textContent = 'Iniciar Câmera';
+  
+  // Limpar inputs de arquivo
+  const fileInput = document.getElementById('file-input');
+  const galleryInput = document.getElementById('gallery-input');
+  if (fileInput) fileInput.value = '';
+  if (galleryInput) galleryInput.value = '';
 }
 
 function stopCamera() {
@@ -421,9 +544,13 @@ async function refreshMap() {
     
     if (isOnline) {
       // Buscar TODOS os diagnósticos (globais)
-      const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=1000`);
-      if (response.ok) {
-        diagnoses = await response.json();
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=1000`);
+        if (response.ok) {
+          diagnoses = await response.json();
+        }
+      } catch (error) {
+        console.error('Erro ao buscar diagnósticos online:', error);
       }
     }
     
@@ -510,9 +637,13 @@ async function loadHistory() {
     
     if (isOnline) {
       // Buscar TODOS os diagnósticos (globais)
-      const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=100`);
-      if (response.ok) {
-        diagnoses = await response.json();
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/diagnoses?limit=100`);
+        if (response.ok) {
+          diagnoses = await response.json();
+        }
+      } catch (error) {
+        console.error('Erro ao buscar histórico online:', error);
       }
     }
     
@@ -612,9 +743,13 @@ async function loadStats() {
     
     if (isOnline) {
       // Buscar estatísticas GLOBAIS (todos os usuários)
-      const response = await fetch(`${API_BASE_URL}/api/stats`);
-      if (response.ok) {
-        stats = await response.json();
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/stats`);
+        if (response.ok) {
+          stats = await response.json();
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas online:', error);
       }
     }
     

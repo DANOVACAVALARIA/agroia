@@ -26,9 +26,12 @@ body {
   display: none !important;
 }
 
-/* Tela inicial */
+/* Tela inicial com background puro */
 #home-screen {
-  background: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%);
+  background: url('img/background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   position: relative;
   overflow: hidden;
 }
@@ -40,15 +43,86 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
   pointer-events: none;
+  /* Removido - sem overlay */
 }
 
 #home-screen > * {
   position: relative;
   z-index: 2;
+}
+
+/* Glass effect para elementos na home - cores específicas */
+.glass-card {
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Botão Diagnóstico - Verde */
+.glass-card.diagnosis {
+  background: rgba(34, 197, 94, 0.5) !important;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.glass-card.diagnosis:hover {
+  background: rgba(34, 197, 94, 0.6) !important;
+}
+
+/* Botão Mapa - Azul */
+.glass-card.map {
+  background: rgba(37, 99, 235, 0.5) !important;
+  border: 1px solid rgba(37, 99, 235, 0.5);
+}
+
+.glass-card.map:hover {
+  background: rgba(37, 99, 235, 0.6) !important;
+}
+
+/* Botão Histórico - Roxo */
+.glass-card.history {
+  background: rgba(147, 51, 234, 0.5) !important;
+  border: 1px solid rgba(147, 51, 234, 0.5);
+}
+
+.glass-card.history:hover {
+  background: rgba(147, 51, 234, 0.6) !important;
+}
+
+/* Botão Estatísticas - Laranja */
+.glass-card.stats {
+  background: rgba(234, 88, 12, 0.5) !important;
+  border: 1px solid rgba(234, 88, 12, 0.5);
+}
+
+.glass-card.stats:hover {
+  background: rgba(234, 88, 12, 0.6) !important;
+}
+
+/* Botões secundários - cinza translúcido */
+.glass-card.secondary {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+.glass-card.secondary:hover {
+  background: rgba(75, 85, 99, 0.6) !important;
+}
+
+/* Textos na home screen com drop shadow mais forte */
+#home-screen h1 {
+  color: white;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+#home-screen p {
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+#sync-status {
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 /* Mapa */
@@ -135,7 +209,64 @@ button:disabled {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsividade */
+/* Botões de upload */
+.file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+.file-input-wrapper input[type=file] {
+  position: absolute;
+  left: -9999px;
+}
+
+/* Melhorar aparência dos botões de opção */
+#diagnosis-screen .space-y-3 > div:has(span) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+/* Efeito hover para botões de arquivo */
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Estilo para separador "ou" */
+.text-center span.text-sm {
+  position: relative;
+  padding: 0 1rem;
+  background: #f9fafb;
+}
+
+.text-center span.text-sm::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -50px;
+  right: calc(100% + 1rem);
+  height: 1px;
+  background: #d1d5db;
+}
+
+.text-center span.text-sm::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -50px;
+  left: calc(100% + 1rem);
+  height: 1px;
+  background: #d1d5db;
+}
 @media (max-width: 640px) {
   .screen {
     font-size: 14px;

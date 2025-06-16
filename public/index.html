@@ -40,46 +40,46 @@
   <section id="home-screen" class="screen flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-100 to-green-200">
     <div class="text-center mb-8">
       <div class="flex items-center justify-center mb-4">
-        <h1 class="text-5xl font-bold text-green-800 mr-4">AGROIA</h1>
-        <span class="text-4xl">🌱</span>
+        <h1 class="text-5xl font-bold text-white mr-4 drop-shadow-lg">AGROIA</h1>
+        <span class="text-4xl drop-shadow-lg">🌱</span>
       </div>
-      <p class="text-green-700 text-lg">Detecção Inteligente de Doenças em Plantas</p>
+      <p class="text-white text-lg drop-shadow-md">Detecção Inteligente de Doenças em Plantas</p>
     </div>
     
     <div class="w-full max-w-md space-y-4">
-      <button class="w-full bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-lg font-semibold" onclick="showScreen('diagnosis-screen')">
+      <button class="w-full bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-lg font-semibold glass-card diagnosis" onclick="showScreen('diagnosis-screen')">
         <i class="fas fa-camera mr-3"></i>
         Diagnóstico de Plantas
       </button>
       
-      <button class="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-lg font-semibold" onclick="showScreen('map-screen')">
+      <button class="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-lg font-semibold glass-card map" onclick="showScreen('map-screen')">
         <i class="fas fa-map-marked-alt mr-3"></i>
         Mapa Global de Registros
       </button>
       
-      <button class="w-full bg-purple-600 text-white px-6 py-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center text-lg font-semibold" onclick="showScreen('history-screen')">
+      <button class="w-full bg-purple-600 text-white px-6 py-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center text-lg font-semibold glass-card history" onclick="showScreen('history-screen')">
         <i class="fas fa-history mr-3"></i>
         Histórico da Comunidade
       </button>
       
-      <button class="w-full bg-orange-600 text-white px-6 py-4 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center text-lg font-semibold" onclick="showScreen('stats-screen')">
+      <button class="w-full bg-orange-600 text-white px-6 py-4 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center text-lg font-semibold glass-card stats" onclick="showScreen('stats-screen')">
         <i class="fas fa-chart-bar mr-3"></i>
         Estatísticas Globais
       </button>
     </div>
 
     <div class="mt-8 space-y-2">
-      <button class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors text-sm" onclick="syncData()">
+      <button class="bg-gray-600 bg-opacity-80 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors text-sm glass-card secondary" onclick="syncData()">
         <i class="fas fa-sync-alt mr-2"></i>
         Sincronizar Dados
       </button>
-      <button class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors text-sm ml-2" onclick="clearAllData()">
+      <button class="bg-red-600 bg-opacity-80 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors text-sm ml-2 glass-card secondary" onclick="clearAllData()">
         <i class="fas fa-trash mr-2"></i>
         Limpar Dados
       </button>
     </div>
 
-    <div id="sync-status" class="mt-4 text-center text-sm text-gray-600"></div>
+    <div id="sync-status" class="mt-4 text-center text-sm text-white drop-shadow-md"></div>
   </section>
 
   <!-- Tela de Diagnóstico -->
@@ -114,10 +114,31 @@
             <i class="fas fa-camera mr-2"></i>
             Capturar Imagem
           </button>
+          
+          <div class="relative">
+            <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="handleFileSelect(event)">
+            <button class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center font-semibold" onclick="document.getElementById('file-input').click()">
+              <i class="fas fa-upload mr-2"></i>
+              Carregar Foto
+            </button>
+          </div>
+          
+          <div class="text-center">
+            <span class="text-sm text-gray-500">ou</span>
+          </div>
+          
+          <div class="relative">
+            <input type="file" id="gallery-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+            <button class="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-semibold" onclick="document.getElementById('gallery-input').click()">
+              <i class="fas fa-images mr-2"></i>
+              Galeria/Computador
+            </button>
+          </div>
         </div>
         
         <div class="mt-4 text-center text-sm text-gray-600">
           <p><i class="fas fa-info-circle mr-1"></i> Posicione a folha no centro da tela</p>
+          <p class="mt-1"><i class="fas fa-lightbulb mr-1"></i> Ou carregue uma foto da galeria/computador</p>
         </div>
       </div>
       
@@ -174,10 +195,6 @@
         Histórico da Comunidade
       </h2>
       <button class="bg-white text-purple-600 px-4 py-2 rounded hover:bg-gray-200 transition-colors" onclick="showScreen('home-screen')">
-        <i class="fas fa-arrow-left mr-1"></i>
-        Voltar
-      </button>
-    </div>2 rounded hover:bg-gray-200 transition-colors" onclick="showScreen('home-screen')">
         <i class="fas fa-arrow-left mr-1"></i>
         Voltar
       </button>

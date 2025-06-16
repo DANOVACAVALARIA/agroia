@@ -17,20 +17,54 @@ const db = new sqlite3.Database('./database/plants.db');
 
 // Criar tabelas
 db.serialize(() => {
-  // Tabela de diagnósticos - GLOBAIS (todos os usuários compartilham)
-  db.run(`CREATE TABLE IF NOT EXISTS diagnoses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    plant_type TEXT NOT NULL,
-    disease TEXT NOT NULL,
-    confidence REAL NOT NULL,
-    latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    synced BOOLEAN DEFAULT 1,
-    image_hash TEXT,
-    user_location TEXT DEFAULT 'Não informado'
-  )`);
+  // Verificar se a tabela existe e atualizar schema se necessário
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='diagnoses'", [], (err, row) => {
+    if (row) {
+      // Tabela existe, verificar se tem a coluna user_location
+      db.all("PRAGMA table_info(diagnoses)", [], (err, columns) => {
+        if (err) {
+          console.error('Erro ao verificar schema da tabela:', err);
+          return;
+        }
+        
+        const hasUserLocation = columns.some(col => col.name === 'user_location');
+        
+        if (!hasUserLocation) {
+          console.log('📊 Adicionando coluna user_location à tabela existente...');
+          db.run("ALTER TABLE diagnoses ADD COLUMN user_location TEXT DEFAULT 'Não informado'", (err) => {
+            if (err) {
+              console.error('Erro ao adicionar coluna user_location:', err);
+            } else {
+              console.log('✅ Coluna user_location adicionada com sucesso');
+            }
+          });
+        }
+      });
+    } else {
+      // Tabela não existe, criar com schema completo
+      console.log('📊 Criando tabela diagnoses...');
+      db.run(`CREATE TABLE IF NOT EXISTS diagnoses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        plant_type TEXT NOT NULL,
+        disease TEXT NOT NULL,
+        confidence REAL NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced BOOLEAN DEFAULT 1,
+        image_hash TEXT,
+        user_location TEXT DEFAULT 'Não informado'
+      )`, (err) => {
+        if (err) {
+          console.error('Erro ao criar tabela diagnoses:', err);
+        } else {
+          console.log('✅ Tabela diagnoses criada com sucesso');
+          insertSampleData();
+        }
+      });
+    }
+  });
 
   // Tabela de plantas offline (para sincronização)
   db.run(`CREATE TABLE IF NOT EXISTS offline_queue (
@@ -40,8 +74,10 @@ db.serialize(() => {
     method TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+});
 
-  // Inserir alguns dados de exemplo se a tabela estiver vazia
+// Função para inserir dados de exemplo
+function insertSampleData() {
   db.get("SELECT COUNT(*) as count FROM diagnoses", [], (err, row) => {
     if (!err && row.count === 0) {
       console.log('📊 Inserindo dados de exemplo...');
@@ -59,14 +95,19 @@ db.serialize(() => {
       `);
       
       sampleData.forEach(data => {
-        stmt.run(data);
+        stmt.run(data, (err) => {
+          if (err) {
+            console.error('Erro ao inserir dados de exemplo:', err);
+          }
+        });
       });
       
-      stmt.finalize();
-      console.log('✅ Dados de exemplo inseridos');
+      stmt.finalize(() => {
+        console.log('✅ Dados de exemplo inseridos');
+      });
     }
   });
-});
+}
 
 // Carregar informações das plantas do JSON
 let plantInfo = {};
@@ -111,7 +152,7 @@ app.post('/api/analyze-plant', async (req, res) => {
   try {
     const { image, latitude, longitude, userId = 'anonymous', userLocation = 'Não informado' } = req.body;
     
-    if (!image || !latitude || !longitude) {
+    if (!image || latitude === undefined || longitude === undefined) {
       return res.status(400).json({ 
         error: 'Dados incompletos: imagem, latitude e longitude são obrigatórios' 
       });
@@ -130,55 +171,86 @@ app.post('/api/analyze-plant', async (req, res) => {
     const crypto = require('crypto');
     const imageHash = crypto.createHash('md5').update(image).digest('hex');
 
-    // Salvar no banco de dados GLOBAL
-    const stmt = db.prepare(`
-      INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash, user_location)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    stmt.run([
-      userId,
-      analysis.plant_type,
-      analysis.disease,
-      analysis.confidence,
-      latitude,
-      longitude,
-      imageHash,
-      userLocation
-    ], function(err) {
+    // Verificar se a coluna user_location existe antes de usar
+    db.all("PRAGMA table_info(diagnoses)", [], (err, columns) => {
       if (err) {
-        console.error('Erro ao salvar diagnóstico:', err);
-        return res.status(500).json({ error: 'Erro ao salvar diagnóstico' });
+        console.error('Erro ao verificar schema:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+      
+      const hasUserLocation = columns.some(col => col.name === 'user_location');
+      
+      let query, params;
+      
+      if (hasUserLocation) {
+        query = `
+          INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash, user_location)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        params = [
+          userId,
+          analysis.plant_type,
+          analysis.disease,
+          analysis.confidence,
+          latitude,
+          longitude,
+          imageHash,
+          userLocation
+        ];
+      } else {
+        query = `
+          INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        params = [
+          userId,
+          analysis.plant_type,
+          analysis.disease,
+          analysis.confidence,
+          latitude,
+          longitude,
+          imageHash
+        ];
       }
 
-      // Obter emoji da planta
-      const plantEmoji = plantInfo.plant_emojis?.[analysis.plant_type] || '🌱';
-      const healthStatus = analysis.disease === 'Saudável' || analysis.disease === 'healthy' ? 
-        plantInfo.health_status?.healthy : plantInfo.health_status?.diseased;
+      // Salvar no banco de dados GLOBAL
+      const stmt = db.prepare(query);
+      
+      stmt.run(params, function(err) {
+        if (err) {
+          console.error('Erro ao salvar diagnóstico:', err);
+          return res.status(500).json({ error: 'Erro ao salvar diagnóstico' });
+        }
 
-      const result = {
-        id: this.lastID,
-        plant_type: analysis.plant_type,
-        disease: analysis.disease,
-        portuguese_name: analysis.portuguese_name,
-        confidence: Math.round(analysis.confidence * 100),
-        accuracy: Math.round(analysis.accuracy),
-        plant_emoji: plantEmoji,
-        health_emoji: healthStatus?.emoji || '❓',
-        health_color: healthStatus?.color || 'gray',
-        latitude,
-        longitude,
-        user_location: userLocation,
-        timestamp: new Date().toISOString(),
-        plant_wiki_url: `https://pt.wikipedia.org/wiki/${encodeURIComponent(analysis.plant_type)}`,
-        disease_info_url: analysis.disease !== 'Saudável' ? 
-          `https://www.embrapa.br/busca-de-noticias/-/noticia/buscar?q=${encodeURIComponent(analysis.disease)}` : null
-      };
+        // Obter emoji da planta
+        const plantEmoji = plantInfo.plant_emojis?.[analysis.plant_type] || '🌱';
+        const healthStatus = analysis.disease === 'Saudável' || analysis.disease === 'healthy' ? 
+          plantInfo.health_status?.healthy : plantInfo.health_status?.diseased;
 
-      res.json(result);
+        const result = {
+          id: this.lastID,
+          plant_type: analysis.plant_type,
+          disease: analysis.disease,
+          portuguese_name: analysis.portuguese_name,
+          confidence: Math.round(analysis.confidence * 100),
+          accuracy: Math.round(analysis.accuracy),
+          plant_emoji: plantEmoji,
+          health_emoji: healthStatus?.emoji || '❓',
+          health_color: healthStatus?.color || 'gray',
+          latitude,
+          longitude,
+          user_location: hasUserLocation ? userLocation : 'Não informado',
+          timestamp: new Date().toISOString(),
+          plant_wiki_url: `https://pt.wikipedia.org/wiki/${encodeURIComponent(analysis.plant_type)}`,
+          disease_info_url: analysis.disease !== 'Saudável' ? 
+            `https://www.embrapa.br/busca-de-noticias/-/noticia/buscar?q=${encodeURIComponent(analysis.disease)}` : null
+        };
+
+        res.json(result);
+      });
+
+      stmt.finalize();
     });
-
-    stmt.finalize();
 
   } catch (error) {
     console.error('Erro na análise:', error);
@@ -212,6 +284,7 @@ app.get('/api/diagnoses', (req, res) => {
         plant_emoji: plantEmoji,
         health_emoji: healthStatus?.emoji || '❓',
         health_color: healthStatus?.color || 'gray',
+        user_location: row.user_location || 'Não informado',
         plant_wiki_url: `https://pt.wikipedia.org/wiki/${encodeURIComponent(row.plant_type)}`,
         disease_info_url: row.disease !== 'Saudável' ? 
           `https://www.embrapa.br/busca-de-noticias/-/noticia/buscar?q=${encodeURIComponent(row.disease)}` : null
@@ -242,13 +315,39 @@ app.post('/api/sync', async (req, res) => {
           const crypto = require('crypto');
           const imageHash = crypto.createHash('md5').update(item.image).digest('hex');
 
-          const stmt = db.prepare(`
-            INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
+          // Verificar schema antes de inserir
+          const columns = await new Promise((resolve, reject) => {
+            db.all("PRAGMA table_info(diagnoses)", [], (err, cols) => {
+              if (err) reject(err);
+              else resolve(cols);
+            });
+          });
+
+          const hasUserLocation = columns.some(col => col.name === 'user_location');
           
-          await new Promise((resolve, reject) => {
-            stmt.run([
+          let query, params;
+          
+          if (hasUserLocation) {
+            query = `
+              INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash, user_location)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            params = [
+              item.userId || 'anonymous',
+              analysis.plant_type,
+              analysis.disease,
+              analysis.confidence,
+              item.latitude,
+              item.longitude,
+              imageHash,
+              item.userLocation || 'Não informado'
+            ];
+          } else {
+            query = `
+              INSERT INTO diagnoses (user_id, plant_type, disease, confidence, latitude, longitude, image_hash)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
+            params = [
               item.userId || 'anonymous',
               analysis.plant_type,
               analysis.disease,
@@ -256,7 +355,13 @@ app.post('/api/sync', async (req, res) => {
               item.latitude,
               item.longitude,
               imageHash
-            ], function(err) {
+            ];
+          }
+
+          const stmt = db.prepare(query);
+          
+          await new Promise((resolve, reject) => {
+            stmt.run(params, function(err) {
               if (err) reject(err);
               else resolve(this.lastID);
             });
@@ -304,8 +409,8 @@ app.get('/api/stats', (req, res) => {
     const stats = {
       total_diagnoses: rows.reduce((sum, row) => sum + row.count, 0),
       plant_types: [...new Set(rows.map(row => row.plant_type))].length,
-      diseases_found: rows.filter(row => row.disease !== 'Saudável').length,
-      healthy_plants: rows.filter(row => row.disease === 'Saudável').reduce((sum, row) => sum + row.count, 0),
+      diseases_found: rows.filter(row => row.disease !== 'Saudável' && row.disease !== 'healthy').length,
+      healthy_plants: rows.filter(row => row.disease === 'Saudável' || row.disease === 'healthy').reduce((sum, row) => sum + row.count, 0),
       by_plant: rows
     };
 
@@ -318,6 +423,15 @@ app.get('/api/plant-info', (req, res) => {
   res.json(plantInfo);
 });
 
+// Rota para verificar saúde do servidor
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    database: 'Connected'
+  });
+});
+
 // Servir frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -327,6 +441,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🌱 Servidor AGROIA rodando na porta ${PORT}`);
   console.log(`📍 Acesse: http://localhost:${PORT}`);
+  console.log(`💾 Banco de dados: ./database/plants.db`);
 });
 
 // Graceful shutdown
